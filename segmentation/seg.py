@@ -39,17 +39,17 @@ def download_data(num_folders, start=0):
   train_y=[]
 
   folder_count=0
-  for i in os.listdir("../data/Dataset_Student/train/")[start:]:
+  for i in os.listdir("./data/Dataset_Student/train/")[start:]:
 
     #increment number of videos we have grabbed
     folder_count+=1
 
     #load mask for these frames
-    mask=np.load(f'../data/Dataset_Student/train/{i}/mask.npy')
+    mask=np.load(f'./data/Dataset_Student/train/{i}/mask.npy')
 
     for j in range(22):
 
-      train_x.append(torch.tensor(transform_image(f'../data/Dataset_Student/train/{i}/image_{j}.png'),dtype=torch.float))
+      train_x.append(torch.tensor(transform_image(f'./data/Dataset_Student/train/{i}/image_{j}.png'),dtype=torch.float))
 
       labels=[]
       masky=mask[j].flatten()
