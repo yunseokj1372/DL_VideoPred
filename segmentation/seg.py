@@ -33,6 +33,40 @@ def transform_image(image):
 
   return image
 
+def load_data(start=0,outer_batch_size = 10):
+  train_x=[]
+  train_y=[]
+
+  folder_count=0
+  for i in os.listdir("./data/Dataset_Student/train/")[start:start+outer_batch_size]:
+
+    #increment number of videos we have grabbed
+    folder_count+=1
+
+    #load mask for these frames
+    mask=np.load(f'./data/Dataset_Student/train/{i}/mask.npy')
+
+    for j in range(22):
+
+      train_x.append(torch.tensor(transform_image(f'./data/Dataset_Student/train/{i}/image_{j}.png'),dtype=torch.float))
+
+      labels=[]
+      masky=mask[j].flatten()
+      for k in range(49):
+        emp = np.zeros(masky.shape[0])
+        inds = np.where(masky==k)
+        emp[inds]+=1
+        labels.append(torch.tensor(emp.reshape((160,240)),dtype=torch.float))
+
+      labels=torch.stack(labels)
+      train_y.append(labels)
+  
+  train_x = torch.stack(train_x)
+  train_y = torch.stack(train_y)
+  start = start+outer_batch_size
+
+  return train_x, train_y, start
+
 def download_data(num_folders, start=0):
 
   train_x=[]
@@ -74,7 +108,7 @@ def train_deeplabv3(inputs, labels, num_epochs, batch_size, device, model, crite
 
     # Move model to device
     # model.to(device)
-    model.train()
+    # model.train()
     inputs.to(device)
     labels.to(device)
 
@@ -113,11 +147,17 @@ def train_model_outer(num_outer_batch, outer_batch_size, model,device, criterion
 
   for i in range(num_outer_batch):
 
-    train_x, train_y = download_data(outer_batch_size,beg)
+    # train_x, train_y = download_data(outer_batch_size,beg)
+    # train_deeplabv3(inputs=train_x, labels=train_y, num_epochs=num_epochs, batch_size=batch_size, device=device, model=model, criterion=criterion, optimizer=optimizer, scheduler=scheduler)
+
+    # beg+=outer_batch_size
+    # print(f'trained outer batch {i+1}')
+
+    model.to(device)
+    model.train()
+    train_x, train_y, start = load_data(outer_batch_size,beg, start)
     train_deeplabv3(inputs=train_x, labels=train_y, num_epochs=num_epochs, batch_size=batch_size, device=device, model=model, criterion=criterion, optimizer=optimizer, scheduler=scheduler)
 
-    beg+=outer_batch_size
-    print(f'trained outer batch {i+1}')
 
 class DiceLoss(nn.Module):
 	'''Dice Loss (F-score, ...)'''
