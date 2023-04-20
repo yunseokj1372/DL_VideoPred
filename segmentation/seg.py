@@ -81,6 +81,7 @@ def train_deeplabv3(inputs, labels, num_epochs, batch_size, device, model, crite
     # Train the model
     for epoch in range(num_epochs):
         
+        min_loss = 10000
         running_loss = 0.0
         i=0
         while i < inputs.shape[0]:
@@ -101,6 +102,9 @@ def train_deeplabv3(inputs, labels, num_epochs, batch_size, device, model, crite
             # Print statistics
             running_loss += loss.item()
             i+=batch_size
+            if loss< min_loss:
+                min_loss = loss
+                torch.save(model.state_dict(), "best_model.pth")
 
         print(f'epoch {epoch+1} loss: {running_loss}')
     scheduler.step()

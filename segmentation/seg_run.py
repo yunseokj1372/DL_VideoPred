@@ -26,8 +26,8 @@ mask = np.load("./data/Dataset_Student/train/video_0/mask.npy")
 model=deeplab_res50(num_classes=49, weights=None, backbone_weights=None)
 #criterion = nn.CrossEntropyLoss(weight=back_weights_prop(49,100))
 criterion = nn.CrossEntropyLoss(weight=seg.back_weights_prop(49,100))
-batch_size=4 #changed from 8
-num_epochs=6
+batch_size=64 #changed from 8
+num_epochs=10
 optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay = 0.01)
 scheduler = optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.9)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -36,10 +36,9 @@ gc.collect()
 
 
 def evaluation(model):
-    seg.train_model_outer(1,model,outer_batch_size = 64, device=device, beg=0, num_epochs=num_epochs, batch_size=batch_size,criterion=criterion, optimizer=optimizer, scheduler=scheduler)
+    seg.train_model_outer(1,1000, model, device=device, beg=0, num_epochs=num_epochs, batch_size=batch_size,criterion=criterion, optimizer=optimizer, scheduler=scheduler)
     model.eval()
     out = model(seg.transform_image("./data/Dataset_Student/train/video_0/image_21.png").unsqueeze(0))['out'][0]
-    torch.save(model.state_dict(), "model1.pth")
     print(jaccard(out.argmax(0),torch.tensor(mask[-1])))
     # plt.imshow(out.argmax(0))
 

@@ -3,10 +3,10 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=1
-#SBATCH --time=1:00:00
-#SBATCH --mem=32GB
+#SBATCH --time=6:00:00
+#SBATCH --mem=64GB
 #SBATCH --gres=gpu
-#SBATCH --job-name=dl_video
+#SBATCH --job-name=dl_video_1
 
 module purge
 
