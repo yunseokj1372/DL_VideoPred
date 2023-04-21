@@ -18,6 +18,27 @@ import torchmetrics
 jaccard = torchmetrics.JaccardIndex(task="multiclass", num_classes=49)
 import gc
 
+class VideoDataset(torch.utils.data.Dataset):
+    def __init__(self, root, id_path, transforms = None):
+        '''
+        param num_objects: a list of number of possible objects.
+        '''
+        super(VideoDataset, self).__init__()
+        self.root = root
+        self.transforms = transforms
+        with open(id_path, 'r') as f:
+          self.ids = f.read().splitlines()
+
+    def __getitem__(self, idx):
+        id = self.ids[idx]
+        img = Image.open(os.path.join(self.root, id)).convert('RGB')
+        mask = np.load(os.path.join(self.root, 'mask.npy'))[int(id.split('_')[-1])]
+        if self.transforms:
+            img = self.transforms(img)
+        return img, mask
+
+    def __len__(self):
+        return len(self.ids)
 
 def transform_image(image):
   
