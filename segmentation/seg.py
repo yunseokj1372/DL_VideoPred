@@ -111,7 +111,6 @@ def train_deeplabv3(inputs, labels, num_epochs, batch_size, device, model, crite
     # model.train()
     inputs.to(device)
     labels.to(device)
-
     # Train the model
     for epoch in range(num_epochs):
         
@@ -122,7 +121,7 @@ def train_deeplabv3(inputs, labels, num_epochs, batch_size, device, model, crite
 
             # Zero the parameter gradients
             optimizer.zero_grad()
-
+            print(i)
             # Forward pass
             outputs = model(inputs[i:i+batch_size])['out']
 
@@ -155,7 +154,11 @@ def train_model_outer(num_outer_batch, outer_batch_size, model,device, criterion
 
     model.to(device)
     model.train()
-    train_x, train_y, start = load_data(outer_batch_size,beg, start)
+    if i ==0:
+        train_x, train_y, start_new = load_data(outer_batch_size=outer_batch_size)
+    else:
+        train_x, train_y, start_new = load_data(start=start,outer_batch_size=outer_batch_size)
+    start = start_new
     train_deeplabv3(inputs=train_x, labels=train_y, num_epochs=num_epochs, batch_size=batch_size, device=device, model=model, criterion=criterion, optimizer=optimizer, scheduler=scheduler)
 
 
