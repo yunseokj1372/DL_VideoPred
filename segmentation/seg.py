@@ -125,6 +125,45 @@ def download_data(num_folders, start=0):
 
   return train_x, train_y  
 
+
+def train_deeplabv3_dataloader(num_epochs, batch_size, device, model, criterion, optimizer, scheduler):
+
+    transform = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+        transforms.GaussianBlur(3,0.5)
+    ])
+
+    train_ds = VideoDataset('./data/Dataset_Student', './train.txt', transforms=transform)
+    trainloader = torch.utils.data.DataLoader(train_ds, batch_size, shuffle=True)
+
+    # Train the model
+    for epoch in range(num_epochs):
+      for (imgs, masks) in trainloader:
+
+        imgs = imgs.to(device)
+        masks = masks.to(device)
+
+        min_loss = 10000
+        running_loss = 0.0
+        i=0
+        optimizer.zero_grad()
+
+        output = model(imgs)
+        loss = criterion(outputs, masks)
+
+        optimizer.step()
+
+  
+        running_loss += loss.item()
+        if loss< min_loss:
+            min_loss = loss
+            torch.save(model.state_dict(), "best_model.pth")
+
+        print(f'epoch {epoch+1} loss: {running_loss}')
+    scheduler.step()
+
+
 def train_deeplabv3(inputs, labels, num_epochs, batch_size, device, model, criterion, optimizer, scheduler):
 
     # Move model to device

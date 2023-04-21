@@ -36,7 +36,8 @@ gc.collect()
 
 
 def evaluation(model):
-    seg.train_model_outer(100,10, model, device=device, beg=0, num_epochs=num_epochs, batch_size=batch_size,criterion=criterion, optimizer=optimizer, scheduler=scheduler)
+    # seg.train_model_outer(100,10, model, device=device, beg=0, num_epochs=num_epochs, batch_size=batch_size,criterion=criterion, optimizer=optimizer, scheduler=scheduler)
+    seg.train_deeplabv3_dataloader(num_epochs, batch_size, device, model, criterion, optimizer, scheduler)
     model.eval()
     out = model(seg.transform_image("./data/Dataset_Student/train/video_0/image_21.png").unsqueeze(0))['out'][0]
     print(jaccard(out.argmax(0),torch.tensor(mask[-1])))
