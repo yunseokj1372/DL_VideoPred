@@ -32,7 +32,9 @@ class VideoDataset(torch.utils.data.Dataset):
     def __getitem__(self, idx):
         id = self.ids[idx]
         img = Image.open(os.path.join(self.root, id)).convert('RGB')
-        mask = np.load(os.path.join(self.root, 'mask.npy'))[int(id.split('_')[-1])]
+        mask_path = '/'.join(id.split('/')[:2]) + '/mask.npy'
+        mask_idx = int(id.split('.')[0][-1])
+        mask = np.load(os.path.join(self.root, mask_path))[mask_idx]
         if self.transforms:
             img = self.transforms(img)
         return img, mask
@@ -125,13 +127,59 @@ def download_data(num_folders, start=0):
 
   return train_x, train_y  
 
+
+def train_deeplabv3_dataloader(num_epochs, batch_size, device, model, criterion, optimizer, scheduler):
+
+    model = model.to(device)
+    transform = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+        transforms.GaussianBlur(3,0.5)
+    ])
+
+    train_ds = VideoDataset('./data/Dataset_Student', './train.txt', transforms=transform)
+    trainloader = torch.utils.data.DataLoader(train_ds, batch_size, shuffle=True)
+
+    # Train the model
+    for epoch in range(num_epochs):
+      for (imgs, masks) in trainloader:
+
+        imgs = imgs.to(device)
+        masks = masks.to(device)
+
+        min_loss = 10000
+        running_loss = 0.0
+        i=0
+        optimizer.zero_grad()
+
+        output = model(imgs)['out'].to(device)
+        print(next(model.parameters()).device)
+        print(output.device)
+        print(masks.device)
+        print(imgs.device)
+        print(output.shape,masks.shape)
+        loss = criterion(output, masks)
+        
+
+        optimizer.step()
+
+  
+        running_loss += loss.item()
+        if loss< min_loss:
+            min_loss = loss
+            torch.save(model.state_dict(), "best_model_fcres101.pth")
+
+        print(f'epoch {epoch+1} loss: {running_loss}')
+    scheduler.step()
+
+
 def train_deeplabv3(inputs, labels, num_epochs, batch_size, device, model, criterion, optimizer, scheduler):
 
     # Move model to device
     # model.to(device)
     # model.train()
-    inputs.to(device)
-    labels.to(device)
+    inputs = inputs.to(device)
+    labels = labels.to(device)
     # Train the model
     for epoch in range(num_epochs):
         
@@ -158,7 +206,7 @@ def train_deeplabv3(inputs, labels, num_epochs, batch_size, device, model, crite
             i+=batch_size
             if loss< min_loss:
                 min_loss = loss
-                torch.save(model.state_dict(), "best_model.pth")
+                torch.save(model.state_dict(), "best_model_res101.pth")
 
         print(f'epoch {epoch+1} loss: {running_loss}')
     scheduler.step()
@@ -173,7 +221,7 @@ def train_model_outer(num_outer_batch, outer_batch_size, model,device, criterion
     # beg+=outer_batch_size
     # print(f'trained outer batch {i+1}')
 
-    model.to(device)
+    model = model.to(device)
     model.train()
     if i ==0:
         train_x, train_y, start_new = load_data(outer_batch_size=outer_batch_size)
