@@ -3,7 +3,7 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=1
-#SBATCH --time=6:00:00
+#SBATCH --time=2:00:00
 #SBATCH --mem=128GB
 #SBATCH --gres=gpu
 #SBATCH --job-name=dl_video_1

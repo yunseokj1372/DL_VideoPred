@@ -173,7 +173,7 @@ def train_deeplabv3_dataloader(num_epochs, batch_size, device, model, criterion,
     scheduler.step()
 
 
-def train_deeplabv3(inputs, labels, num_epochs, batch_size, device, model, criterion, optimizer, scheduler):
+def train_deeplabv3(inputs, labels, num_epochs, batch_size, device, model, criterion, optimizer, scheduler, filena = 'best_model.pth'):
 
     # Move model to device
     # model.to(device)
@@ -190,7 +190,6 @@ def train_deeplabv3(inputs, labels, num_epochs, batch_size, device, model, crite
 
             # Zero the parameter gradients
             optimizer.zero_grad()
-            print(i)
             # Forward pass
             outputs = model(inputs[i:i+batch_size])['out']
 
@@ -206,12 +205,12 @@ def train_deeplabv3(inputs, labels, num_epochs, batch_size, device, model, crite
             i+=batch_size
             if loss< min_loss:
                 min_loss = loss
-                torch.save(model.state_dict(), "best_model_res101.pth")
+                torch.save(model.state_dict(), filena)
 
         print(f'epoch {epoch+1} loss: {running_loss}')
     scheduler.step()
 
-def train_model_outer(num_outer_batch, outer_batch_size, model,device, criterion, optimizer, scheduler, beg=0,num_epochs = 6, batch_size = 4):
+def train_model_outer(num_outer_batch, outer_batch_size, model,device, criterion, optimizer, scheduler,filena, beg=0,num_epochs = 6, batch_size = 4):
 
   for i in range(num_outer_batch):
 
@@ -228,7 +227,7 @@ def train_model_outer(num_outer_batch, outer_batch_size, model,device, criterion
     else:
         train_x, train_y, start_new = load_data(start=start,outer_batch_size=outer_batch_size)
     start = start_new
-    train_deeplabv3(inputs=train_x, labels=train_y, num_epochs=num_epochs, batch_size=batch_size, device=device, model=model, criterion=criterion, optimizer=optimizer, scheduler=scheduler)
+    train_deeplabv3(inputs=train_x, labels=train_y, num_epochs=num_epochs, batch_size=batch_size, device=device, model=model, criterion=criterion, optimizer=optimizer, scheduler=scheduler, filena = filena)
 
 
 class DiceLoss(nn.Module):

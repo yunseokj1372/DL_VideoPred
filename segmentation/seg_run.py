@@ -7,9 +7,7 @@ import torch.nn as nn
 from torchvision import transforms
 from PIL import Image
 from torchvision.models.segmentation import deeplabv3_resnet50 as deeplab_res50
-from torchvision.models.segmentation import (
-    deeplabv3_mobilenet_v3_large as deeplab_mobilenet,
-)
+from torchvision.models.segmentation import deeplabv3_mobilenet_v3_large as deeplab_mobilenet
 from torchvision.models.segmentation import deeplabv3_resnet101 as deeplab_res101
 from torchvision.models.segmentation import fcn_resnet50 as fcn_res50
 from torchvision.models.segmentation import fcn_resnet101 as fcn_res101
@@ -23,7 +21,7 @@ import gc
 jaccard = torchmetrics.JaccardIndex(task="multiclass", num_classes=49)
 mask = np.load("./data/Dataset_Student/train/video_0/mask.npy")
 
-model = deeplab_res101(num_classes=49, weights=None, backbone_weights=None)
+model = fcn_res101(num_classes=49, weights=None, backbone_weights=None)
 # criterion = nn.CrossEntropyLoss(weight=back_weights_prop(49,100))
 criterion = nn.CrossEntropyLoss(weight=seg.back_weights_prop(49, 1000))
 batch_size = 32  # changed from 8
@@ -34,6 +32,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 criterion = criterion.to(device)
 print(device)
 gc.collect()
+filena = './path_files/best_model_weight_fcres101_true.pth'
 
 
 def evaluation(model):
@@ -47,7 +46,7 @@ def evaluation(model):
         batch_size=batch_size,
         criterion=criterion,
         optimizer=optimizer,
-        scheduler=scheduler,
+        scheduler=scheduler,filena = filena
     )
     # seg.train_deeplabv3_dataloader(num_epochs, batch_size, device, model, criterion, optimizer, scheduler)
     model.eval()
