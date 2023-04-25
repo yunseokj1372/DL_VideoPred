@@ -58,6 +58,8 @@ def make_segmentation_predictions(pth, input_images_path):
         input = torch.stack(input)
         pred_output = pred_output + list(model(input)["out"].argmax(1))
 
+    return pred_output
+
 
 if __name__ == "__main__":
 
