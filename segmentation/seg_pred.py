@@ -15,6 +15,7 @@ from torchvision.models.segmentation import lraspp_mobilenet_v3_large as lraspp
 
 # hard code model class here
 model = deeplab_res50(n_classes=49, weights=None, weights_backbone=None)
+device = "cuda"
 
 
 def transform_image(image):
@@ -35,7 +36,7 @@ def transform_image(image):
 
 def make_segmentation_predictions(pth, input_images_path):
 
-    model.load_state_dict(pth, map_location=torch.device("cpu"))
+    model.load_state_dict(pth, map_location=torch.device("cuda"))
     model.eval()
 
     # create predicted output tensor
@@ -56,6 +57,7 @@ def make_segmentation_predictions(pth, input_images_path):
             )
 
         input = torch.stack(input)
+        input = input.to(device)
         pred_output = pred_output + list(model(input)["out"].argmax(1))
 
     return pred_output
