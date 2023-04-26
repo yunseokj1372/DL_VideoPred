@@ -1,2 +1,7 @@
 data/*
 .DS_Store
+path_files/*
+hidden_data/*
+result/*
+*.out
+

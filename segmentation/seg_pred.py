@@ -5,16 +5,14 @@ import sys
 from PIL import Image
 import torch
 from torchvision.models.segmentation import deeplabv3_resnet50 as deeplab_res50
-from torchvision.models.segmentation import (
-    deeplabv3_mobilenet_v3_large as deeplab_mobilenet,
-)
+from torchvision.models.segmentation import deeplabv3_mobilenet_v3_large as deeplab_mobilenet
 from torchvision.models.segmentation import deeplabv3_resnet101 as deeplab_res101
 from torchvision.models.segmentation import fcn_resnet50 as fcn_res50
 from torchvision.models.segmentation import fcn_resnet101 as fcn_res101
 from torchvision.models.segmentation import lraspp_mobilenet_v3_large as lraspp
 
 # hard code model class here
-model = deeplab_res50(n_classes=49, weights=None, weights_backbone=None)
+model = deeplab_res50(num_classes=49, weights=None, weights_backbone=None)
 device = "cuda"
 
 
@@ -35,10 +33,11 @@ def transform_image(image):
 
 
 def make_segmentation_predictions(pth, input_images_path):
-
-    model.load_state_dict(pth, map_location=torch.device("cuda"))
+    
+    
+    model.load_state_dict(torch.load(pth))
     model.eval()
-
+    model.to(device)
     # create predicted output tensor
     pred_output = []
 
@@ -64,7 +63,8 @@ def make_segmentation_predictions(pth, input_images_path):
 
 
 if __name__ == "__main__":
-
+    # input_images_path = './/hidden_data//hidden//' # hidden/video_16999
+    
     predicted_output = make_segmentation_predictions(sys.argv[1], sys.argv[2])
 
     torch.save(predicted_output, sys.argv[3])
