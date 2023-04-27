@@ -18,6 +18,7 @@ import torchmetrics
 jaccard = torchmetrics.JaccardIndex(task="multiclass", num_classes=49)
 import gc
 
+device='cuda'
 class VideoDataset(torch.utils.data.Dataset):
     def __init__(self, root, id_path, transforms = None):
         '''
@@ -47,8 +48,7 @@ def transform_image(image):
   image = Image.open(image)
   transform = transforms.Compose([
         transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-        transforms.GaussianBlur(3,0.5)
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     ])
   
   image = image.convert("RGB")
@@ -175,15 +175,12 @@ def train_deeplabv3_dataloader(num_epochs, batch_size, device, model, criterion,
 
 def train_deeplabv3(inputs, labels, num_epochs, batch_size, device, model, criterion, optimizer, scheduler):
 
-    # Move model to device
-    # model.to(device)
-    # model.train()
+    
     inputs = inputs.to(device)
     labels = labels.to(device)
     # Train the model
     for epoch in range(num_epochs):
-        
-        min_loss = 10000
+     
         running_loss = 0.0
         i=0
         while i < inputs.shape[0]:
@@ -204,24 +201,31 @@ def train_deeplabv3(inputs, labels, num_epochs, batch_size, device, model, crite
             # Print statistics
             running_loss += loss.item()
             i+=batch_size
-            if loss< min_loss:
-                min_loss = loss
-                torch.save(model.state_dict(), "best_model_res101.pth")
 
         print(f'epoch {epoch+1} loss: {running_loss}')
+
     scheduler.step()
 
-def train_model_outer(num_outer_batch, outer_batch_size, model,device, criterion, optimizer, scheduler, beg=0,num_epochs = 6, batch_size = 4):
+def get_val_labels(path):
+
+  val_labels=[]
+  for i in os.listdir(path):
+    
+    val_labels.append(torch.tensor(np.load(f'{path}/{i}/mask.npy')))
+
+  return torch.stack(val_labels) 
+
+def train_model_outer(num_outer_batch, outer_batch_size, model,device, criterion, optimizer, scheduler,direct = './path_files/best_model.pth', beg=0,num_epochs = 6, batch_size = 4):
+
+  val_labels = get_val_labels('./data/Dataset_Student/train')
+  val_labels=val_labels.to(device)
+  model = model.to(device)
+
+  print(f'val labels shape: {val_labels.size()}')
+  val_iou = 0
 
   for i in range(num_outer_batch):
-
-    # train_x, train_y = download_data(outer_batch_size,beg)
-    # train_deeplabv3(inputs=train_x, labels=train_y, num_epochs=num_epochs, batch_size=batch_size, device=device, model=model, criterion=criterion, optimizer=optimizer, scheduler=scheduler)
-
-    # beg+=outer_batch_size
-    # print(f'trained outer batch {i+1}')
-
-    model = model.to(device)
+    
     model.train()
     if i ==0:
         train_x, train_y, start_new = load_data(outer_batch_size=outer_batch_size)
@@ -230,6 +234,48 @@ def train_model_outer(num_outer_batch, outer_batch_size, model,device, criterion
     start = start_new
     train_deeplabv3(inputs=train_x, labels=train_y, num_epochs=num_epochs, batch_size=batch_size, device=device, model=model, criterion=criterion, optimizer=optimizer, scheduler=scheduler)
 
+    model_predictions = make_segmentation_predictions(model, device, './data/Dataset_Student/val')
+    print(f'model predictions shape: {model_predictions.size()}')
+
+    val_iou_ = jaccard(model_predictions, val_labels)
+
+    print(f'iouloss: {val_iou}')
+
+    if val_iou_ > val_iou:
+
+      torch.save(model.state_dict(), direct)
+      val_iou=val_iou_
+      print(f'new val iou: {val_iou}')
+
+
+def make_segmentation_predictions(model,device, input_images_path):
+    
+    model.eval()
+    model.to(device)
+    # create predicted output tensor
+    pred_output = []
+
+    # go one video at a time
+    for i in os.listdir(input_images_path):
+
+        input = []
+
+        for j in range(11):
+
+            input.append(
+                torch.tensor(
+                    transform_image(f"{input_images_path}//{i}//image_{j}.png"),
+                    dtype=torch.float,
+                )
+            )
+
+        input = torch.stack(input)
+        input = input.to(device)
+        pred_output = pred_output + list(model(input)["out"].argmax(1))
+
+    return torch.stack(pred_output)
+
+    
 
 class DiceLoss(nn.Module):
 	'''Dice Loss (F-score, ...)'''

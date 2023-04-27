@@ -12,7 +12,7 @@ from torchvision.models.segmentation import fcn_resnet101 as fcn_res101
 from torchvision.models.segmentation import lraspp_mobilenet_v3_large as lraspp
 
 # hard code model class here
-model = deeplab_res50(num_classes=49, weights=None, weights_backbone=None)
+model = deeplab_mobilenet(num_classes=49, weights=None, weights_backbone=None)
 device = "cuda"
 
 

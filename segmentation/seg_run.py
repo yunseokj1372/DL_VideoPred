@@ -23,7 +23,7 @@ import gc
 jaccard = torchmetrics.JaccardIndex(task="multiclass", num_classes=49)
 mask = np.load("./data/Dataset_Student/train/video_0/mask.npy")
 
-model = deeplab_res101(num_classes=49, weights=None, backbone_weights=None)
+model = deeplab_res50(num_classes=49, weights=None, backbone_weights=None)
 # criterion = nn.CrossEntropyLoss(weight=back_weights_prop(49,100))
 criterion = nn.CrossEntropyLoss(weight=seg.back_weights_prop(49, 1000))
 batch_size = 32  # changed from 8
@@ -35,13 +35,16 @@ criterion = criterion.to(device)
 print(device)
 gc.collect()
 
+direct = './path_files/best_model_weight_val_res50.pth'
 
-def evaluation(model):
+
+def evaluation(model,direct):
     seg.train_model_outer(
         100,
         10,
         model,
         device=device,
+        direct = direct,
         beg=0,
         num_epochs=num_epochs,
         batch_size=batch_size,
@@ -61,7 +64,7 @@ def evaluation(model):
 
 
 def main():
-    evaluation(model)
+    evaluation(model,direct)
 
 
 if __name__ == "__main__":
